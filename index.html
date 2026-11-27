@@ -107,9 +107,9 @@ figure{margin:0}figcaption{font-size:13px;font-weight:600}
    <optgroup label="US price"><option value="current">Current price</option><option value="new">New retail price</option><option value="refurb">Refurbished price</option><option value="used">Used sale price</option><option value="msrp">Original MSRP</option></optgroup>
   </select></label>
   <label class="chart-control"><span>Y axis</span><select id="benchmark">
-   <optgroup label="Benchmark score"><option value="multi-total">Multicore CPU score</option><option value="single-total">Single-core CPU score</option><option value="cl-total">GPU OpenCL score</option></optgroup>
-   <optgroup label="Score per core"><option value="multi-core">Multicore score per CPU core</option><option value="cl-core">OpenCL score per GPU core</option></optgroup>
-   <optgroup label="Score per $1,000"><option value="multi-value">Multicore score per $1,000</option><option value="single-value">Single-core score per $1,000</option><option value="cl-value">OpenCL score per $1,000</option></optgroup>
+   <option value="multi">CPU (multicore)</option>
+   <option value="single">CPU (single-core)</option>
+   <option value="cl">GPU (OpenCL)</option>
   </select></label>
  </div>
  <div id="chart-key" aria-label="Chip families"></div>
@@ -266,11 +266,6 @@ const measures={single:'Single-core score',multi:'Multicore score',cl:'GPU OpenC
 const formatScore=n=>n.toLocaleString('en-US');
 const priceBasis={current:'Current price',refurb:'Refurbished',used:'Used sale',new:'New retail',msrp:'Price when new (MSRP)'};
 const tiers=['Base','Pro','Max','Ultra'];
-function yLabel(key,measure){
- if(measure==='core')return measures[key]+' per '+(key==='cl'?'GPU':'CPU')+' core';
- if(measure==='value')return measures[key]+' per $1,000';
- return measures[key];
-}
 const hardwareNote=$('chart-note').textContent;
 function getQuote(row,basis){
  if(basis==='current'){
@@ -284,19 +279,15 @@ function getQuote(row,basis){
  const quote=row.quotes[basis];
  return quote?.amount>0?quote:null;
 }
-function coordinates(row,xKey,yKey,basis,measure){
- const needsPrice=xKey==='price'||measure==='value';
+function coordinates(row,xKey,yKey,basis){
+ const needsPrice=xKey==='price';
  const quote=needsPrice?getQuote(row,basis):null;
  if(needsPrice&&!quote)return null;
  const x=xKey==='tier'?tiers.indexOf(row.tier):xKey==='price'?quote.amount:row[xKey];
- let y=row[yKey];
- if(measure==='core')y/=row[yKey==='cl'?'gpu':'cpu'];
- if(measure==='value')y=1000*y/quote.amount;
- return {x,y,quote};
+ return {x,y:row[yKey],quote};
 }
-function pointDetail(row,point,yKey,basis,measure){
+function pointDetail(row,point,yKey,basis){
  const parts=[name(row),measures[yKey]+' '+formatScore(row[yKey]),(row[yKey]/base[yKey]).toFixed(2)+'× your Mac'];
- if(measure==='core')parts.push(formatScore(Math.round(point.y))+' points per '+(yKey==='cl'?'GPU':'CPU')+' core');
  if(point.quote){
   parts.push(dollars(point.quote.amount)+' · '+point.quote.label,formatScore(Math.round(row[yKey]*1000/point.quote.amount))+' points per $1,000');
   const resale=getQuote(base,'used');
@@ -309,15 +300,15 @@ function pointDetail(row,point,yKey,basis,measure){
  }
  return parts.join(' · ');
 }
-function collectPoints(family,xKey,yKey,basis,measure){
+function collectPoints(family,xKey,yKey,basis){
  const points=new Map();
  for(const row of rows){
   if(row.family!==family)continue;
-  const point=coordinates(row,xKey,yKey,basis,measure);
+  const point=coordinates(row,xKey,yKey,basis);
   if(!point)continue;
   const key=point.x+'/'+point.y;
   if(!points.has(key))points.set(key,{x:point.x,y:point.y,names:new Set()});
-  points.get(key).names.add(pointDetail(row,point,yKey,basis,measure));
+  points.get(key).names.add(pointDetail(row,point,yKey,basis));
  }
  return [...points.values()].sort((a,b)=>a.x-b.x||b.y-a.y);
 }
@@ -328,12 +319,12 @@ function axis(max,intervals){
  return {limit,ticks:Array.from({length:Math.round(limit/step)+1},(_,i)=>i*step)};
 }
 function renderChart(){
- const [yKey,measure]=benchmark.value.split('-');
+ const yKey=benchmark.value;
  const price=Object.hasOwn(priceBasis,hardware.value);
  const xKey=price?'price':hardware.value;
  const basis=price?hardware.value:'current';
  const byTier=xKey==='tier';
- const series=families.map(family=>collectPoints(family,xKey,yKey,basis,measure));
+ const series=families.map(family=>collectPoints(family,xKey,yKey,basis));
  const points=series.flat();
  const xLabel=price?priceBasis[basis]+' (USD)':byTier?'Chip tier':dimensions[xKey];
  const width=Math.max(300,$('plot').clientWidth||800),height=width<580?345:410;
@@ -342,7 +333,7 @@ function renderChart(){
  const yAxis=axis(Math.max(1,...points.map(p=>p.y)),5);
  const px=x=>left+x/xAxis.limit*(width-left-right);
  const py=y=>height-bottom-y/yAxis.limit*(height-top-bottom);
- let svg='<svg viewBox="0 0 '+width+' '+height+'" aria-label="'+esc(yLabel(yKey,measure)+' by '+xLabel)+'" role="group">';
+ let svg='<svg viewBox="0 0 '+width+' '+height+'" aria-label="'+esc(measures[yKey]+' by '+xLabel)+'" role="group">';
  for(const tick of yAxis.ticks){
   svg+='<line class="guide" x1="'+left+'" x2="'+(width-right)+'" y1="'+py(tick)+'" y2="'+py(tick)+'"/><text x="'+(left-8)+'" y="'+(py(tick)+4)+'" text-anchor="end">'+formatScore(tick)+'</text>';
  }
@@ -367,15 +358,14 @@ function renderChart(){
    svg+='<circle class="chart-dot" tabindex="0" role="img" aria-label="'+esc(detail)+'" data-detail="'+esc(detail)+'" cx="'+px(p.x)+'" cy="'+py(p.y)+'" r="4" fill="'+colors[i]+'"><title>'+esc(detail)+'</title></circle>';
   }
  });
- const own=coordinates(base,xKey,yKey,basis,measure);
+ const own=coordinates(base,xKey,yKey,basis);
  if(own)svg+='<circle class="own-point" cx="'+px(own.x)+'" cy="'+py(own.y)+'" r="8" fill="none"/>';
  $('plot').innerHTML=points.length?svg+'</svg>':'<p>No configurations have a recorded price for this selection.</p>';
- $('y-title').textContent=yLabel(yKey,measure);
- $('point-info').textContent='Your Mac · '+(own?pointDetail(base,own,yKey,basis,measure):name(base)+' · No recorded '+priceBasis[basis].toLowerCase()+' price');
+ $('y-title').textContent=measures[yKey];
+ $('point-info').textContent='Your Mac · '+(own?pointDetail(base,own,yKey,basis):name(base)+' · No recorded '+priceBasis[basis].toLowerCase()+' price');
  const lineNote=byTier?'Each family line joins its highest observed score at each available tier.':price?'Each family line tracks its best observed score within budget.':hardwareNote;
- const unitNote=measure==='value'?'Points per $1,000 use the full Mac’s '+priceBasis[basis].toLowerCase()+'. ':measure==='core'?'Scores are divided by the number of '+(yKey==='cl'?'GPU':'CPU')+' cores. ':'';
- $('chart-note').textContent=unitNote+lineNote;
- if(basis==='current'&&(price||measure==='value'))$('chart-note').textContent+=' Current price uses the lowest recorded new listing, refurbished listing or used sale.';
+ $('chart-note').textContent=lineNote;
+ if(basis==='current'&&price)$('chart-note').textContent+=' Current price uses the lowest recorded new listing, refurbished listing or used sale.';
 }
 $('chart-key').innerHTML=families.map((family,i)=>'<span><svg width="24" height="10" aria-hidden="true"><path d="M0 5H24" stroke="'+colors[i]+'" stroke-width="2" stroke-dasharray="'+patterns[i]+'"/><circle cx="12" cy="5" r="3" fill="'+colors[i]+'"/></svg>'+esc(family)+'</span>').join('');
 function showView(chart){
@@ -397,6 +387,5 @@ for(const event of ['pointerover','focusin','click']){
  });
 }
 window.addEventListener('resize',()=>{if(!chartPane.hidden)renderChart()});
-if(window.location?.hash==='#price'){hardware.value='current';showView(true)}
-if(window.location?.hash==='#value'){hardware.value='tier';benchmark.value='multi-value';showView(true)}
+if(['#price','#value'].includes(window.location?.hash)){hardware.value='current';showView(true)}
 </script></body></html>
