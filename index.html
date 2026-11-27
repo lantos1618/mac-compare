@@ -96,20 +96,21 @@ figure{margin:0}figcaption{font-size:13px;font-weight:600}
 #plot svg{width:100%;height:auto;display:block;overflow:visible}#plot text{fill:var(--muted);font-size:12px}.axis-title{font-weight:600}
 .guide{stroke:var(--line)}.chart-dot{stroke:var(--paper);stroke-width:1.25px;cursor:crosshair}.chart-dot:hover,.chart-dot:focus{stroke:var(--ink);stroke-width:2px}.own-point{stroke:var(--ink);stroke-width:2px;pointer-events:none}
 #point-info{font-weight:550;min-height:1.5em}.chart-note{color:var(--muted);font-size:12px}
-.measure-switch{margin:0 0 15px;display:inline-flex;max-width:100%;padding:3px;gap:2px;background:var(--canvas);border:1px solid var(--line);border-radius:12px}
-.measure-switch button{border:0;border-radius:8px;padding:9px 12px;font:550 14px var(--sans);background:transparent;color:var(--ink);cursor:pointer}
-.measure-switch button[aria-pressed=true]{color:var(--link);background:var(--paper);box-shadow:0 1px 4px var(--shadow)}
-.measure-switch button:disabled{opacity:.45;cursor:default}
 </style></head><body><main class="page"><header class="intro"><div><h1>Mac compute</h1><p>Click a configuration to set it as your Mac and compare compute and US prices.</p></div><div class="picker"><label for="search">Find your Mac</label><div class="searchbox"><span class="lens" aria-hidden="true"></span><input id="search" type="text" role="combobox" aria-autocomplete="list" aria-controls="choices" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Type a Mac, e.g. M2 Pro 16 GB"><button type="button" id="open" aria-label="Show Mac options" tabindex="-1">⌄</button></div><div class="menu" id="choices" role="listbox" aria-label="Matching Macs" hidden></div></div></header>
 <div class="view-switch" role="group" aria-label="View"><button id="table-button" aria-pressed="true" aria-controls="table-view">Table</button><button id="chart-button" aria-pressed="false" aria-controls="chart-view">Chart</button></div>
 <div id="table-view" class="frame" tabindex="0" aria-label="Scrollable Mac configuration table"><table><caption class="sr">Mac configurations and benchmark multiples relative to the selected Mac</caption><colgroup><col style="width:var(--family)"><col style="width:var(--tier)"><col style="width:var(--cpu)"><col style="width:var(--gpu)"><col style="width:var(--ram)"><col style="width:73px"><col style="width:78px"><col style="width:124px"><col style="width:114px"><col style="width:103px"><col style="width:113px"><col style="width:108px"><col style="width:73px"><col style="width:73px"><col style="width:76px"><col style="width:225px"><col style="width:286px"></colgroup><thead><tr class="band"><th colspan="4" scope="colgroup">Apple silicon</th><th colspan="3" scope="colgroup" class="cfg">Mac configuration</th><th colspan="5" scope="colgroup" class="prices">US price</th><th colspan="3" scope="colgroup" class="perf">Relative to your Mac</th><th colspan="2" scope="colgroup" class="pc">PC benchmark matches</th></tr><tr class="labels"><th scope="col" class="pin p0">Family</th><th scope="col" class="pin p1">Chip tier</th><th scope="col" class="pin p2">CPU<br>cores</th><th scope="col" class="pin p3">GPU<br>cores</th><th scope="col" class="pin p4">Unified<br>memory</th><th scope="col">SSD</th><th scope="col">Screen</th><th scope="col">Current price</th><th scope="col">Price when new<br>(MSRP)</th><th scope="col">New retail</th><th scope="col">Refurbished</th><th scope="col">Used</th><th scope="col">Single-core</th><th scope="col">Multicore</th><th scope="col">GPU<br>OpenCL</th><th scope="col">Intel / AMD CPU</th><th scope="col">NVIDIA / AMD GPUs</th></tr></thead><tbody id="grid"></tbody></table></div>
 <details id="table-help"><summary>How to read the table</summary><p>Each merged box applies to the rows it spans. Performance is the candidate’s Geekbench 7 score divided by your selected Mac’s score. A 2.00× result means twice the benchmark score. GPU OpenCL measures compute. Game frame rates depend on the game and settings.</p><p>Each price links to its US source for that configuration. Current price is the lowest recorded US price across new listings, refurbished listings and completed used sales. The condition and source appear below the amount. Price when new is the historical MSRP for that configuration. New retail uses recorded new listings. Refurbished prices include the seller or condition grade. A Used price is an individual completed sale on Swappa, with the condition and sale month shown. A dash means no US price was verified for that condition. An external screen identifies a Mac Studio. PC match percentages compare the PC component with the chip on that row.</p></details>
 <section id="chart-view" aria-label="Benchmark chart" hidden>
- <div class="measure-switch" role="group" aria-label="Score measure"><button id="measure-total" aria-pressed="true">Total score</button><button id="measure-core" aria-pressed="false">Per core</button><button id="measure-value" aria-pressed="false">Per $1,000</button></div>
  <div class="chart-settings" aria-label="Chart controls">
-<label class="chart-control" id="hardware-control"><span>Compare by</span><select id="hardware"><option value="cpu">CPU cores</option><option value="gpu">GPU cores</option><option value="ram">Unified memory</option><option value="price">US price</option></select></label>
-<label class="chart-control" id="basis-control" hidden><span>Price basis</span><select id="basis"><option value="current">Current price</option><option value="refurb">Refurbished</option><option value="used">Used sale</option><option value="new">New retail</option><option value="msrp">Price when new (MSRP)</option></select></label>
-<label class="chart-control" id="benchmark-control"><span>Benchmark</span><select id="benchmark"><option value="multi">Multicore CPU</option><option value="single">Single-core CPU</option><option value="cl">GPU OpenCL</option></select></label>
+  <label class="chart-control"><span>X axis</span><select id="hardware">
+   <optgroup label="Hardware"><option value="cpu">CPU cores</option><option value="gpu">GPU cores</option><option value="ram">Unified memory (GB)</option><option value="tier">Chip tier</option></optgroup>
+   <optgroup label="US price"><option value="current">Current price</option><option value="new">New retail price</option><option value="refurb">Refurbished price</option><option value="used">Used sale price</option><option value="msrp">Original MSRP</option></optgroup>
+  </select></label>
+  <label class="chart-control"><span>Y axis</span><select id="benchmark">
+   <optgroup label="Benchmark score"><option value="multi-total">Multicore CPU score</option><option value="single-total">Single-core CPU score</option><option value="cl-total">GPU OpenCL score</option></optgroup>
+   <optgroup label="Score per core"><option value="multi-core">Multicore score per CPU core</option><option value="cl-core">OpenCL score per GPU core</option></optgroup>
+   <optgroup label="Score per $1,000"><option value="multi-value">Multicore score per $1,000</option><option value="single-value">Single-core score per $1,000</option><option value="cl-value">OpenCL score per $1,000</option></optgroup>
+  </select></label>
  </div>
  <div id="chart-key" aria-label="Chip families"></div>
  <figure><figcaption id="y-title"></figcaption><div id="plot"></div></figure>
@@ -265,8 +266,7 @@ const measures={single:'Single-core score',multi:'Multicore score',cl:'GPU OpenC
 const formatScore=n=>n.toLocaleString('en-US');
 const priceBasis={current:'Current price',refurb:'Refurbished',used:'Used sale',new:'New retail',msrp:'Price when new (MSRP)'};
 const tiers=['Base','Pro','Max','Ultra'];
-let measure='total';
-function yLabel(key){
+function yLabel(key,measure){
  if(measure==='core')return measures[key]+' per '+(key==='cl'?'GPU':'CPU')+' core';
  if(measure==='value')return measures[key]+' per $1,000';
  return measures[key];
@@ -284,7 +284,7 @@ function getQuote(row,basis){
  const quote=row.quotes[basis];
  return quote?.amount>0?quote:null;
 }
-function coordinates(row,xKey,yKey,basis){
+function coordinates(row,xKey,yKey,basis,measure){
  const needsPrice=xKey==='price'||measure==='value';
  const quote=needsPrice?getQuote(row,basis):null;
  if(needsPrice&&!quote)return null;
@@ -294,13 +294,13 @@ function coordinates(row,xKey,yKey,basis){
  if(measure==='value')y=1000*y/quote.amount;
  return {x,y,quote};
 }
-function pointDetail(row,point,yKey){
+function pointDetail(row,point,yKey,basis,measure){
  const parts=[name(row),measures[yKey]+' '+formatScore(row[yKey]),(row[yKey]/base[yKey]).toFixed(2)+'× your Mac'];
  if(measure==='core')parts.push(formatScore(Math.round(point.y))+' points per '+(yKey==='cl'?'GPU':'CPU')+' core');
  if(point.quote){
   parts.push(dollars(point.quote.amount)+' · '+point.quote.label,formatScore(Math.round(row[yKey]*1000/point.quote.amount))+' points per $1,000');
   const resale=getQuote(base,'used');
-  if(resale&&base.id!==row.id&&$('basis').value!=='msrp'){
+  if(resale&&base.id!==row.id&&basis!=='msrp'){
    const net=point.quote.amount-resale.amount;
    const gain=100*(row[yKey]/base[yKey]-1);
    parts.push('Estimated upgrade cost '+dollars(net)+' after '+dollars(resale.amount)+' resale, before fees');
@@ -309,15 +309,15 @@ function pointDetail(row,point,yKey){
  }
  return parts.join(' · ');
 }
-function collectPoints(family,xKey,yKey,basis){
+function collectPoints(family,xKey,yKey,basis,measure){
  const points=new Map();
  for(const row of rows){
   if(row.family!==family)continue;
-  const point=coordinates(row,xKey,yKey,basis);
+  const point=coordinates(row,xKey,yKey,basis,measure);
   if(!point)continue;
   const key=point.x+'/'+point.y;
   if(!points.has(key))points.set(key,{x:point.x,y:point.y,names:new Set()});
-  points.get(key).names.add(pointDetail(row,point,yKey));
+  points.get(key).names.add(pointDetail(row,point,yKey,basis,measure));
  }
  return [...points.values()].sort((a,b)=>a.x-b.x||b.y-a.y);
 }
@@ -328,16 +328,12 @@ function axis(max,intervals){
  return {limit,ticks:Array.from({length:Math.round(limit/step)+1},(_,i)=>i*step)};
 }
 function renderChart(){
- const yKey=benchmark.value;
- if(measure==='core'&&yKey==='single')measure='total';
- const byTier=measure!=='total';
- const xKey=byTier?'tier':hardware.value;
- $('hardware-control').hidden=byTier;
- $('measure-core').disabled=yKey==='single';
- for(const key of ['total','core','value'])$('measure-'+key).setAttribute('aria-pressed',String(key===measure));
- const price=xKey==='price',basis=$('basis').value;
- $('basis-control').hidden=!(price||measure==='value');
- const series=families.map(family=>collectPoints(family,xKey,yKey,basis));
+ const [yKey,measure]=benchmark.value.split('-');
+ const price=Object.hasOwn(priceBasis,hardware.value);
+ const xKey=price?'price':hardware.value;
+ const basis=price?hardware.value:'current';
+ const byTier=xKey==='tier';
+ const series=families.map(family=>collectPoints(family,xKey,yKey,basis,measure));
  const points=series.flat();
  const xLabel=price?priceBasis[basis]+' (USD)':byTier?'Chip tier':dimensions[xKey];
  const width=Math.max(300,$('plot').clientWidth||800),height=width<580?345:410;
@@ -346,7 +342,7 @@ function renderChart(){
  const yAxis=axis(Math.max(1,...points.map(p=>p.y)),5);
  const px=x=>left+x/xAxis.limit*(width-left-right);
  const py=y=>height-bottom-y/yAxis.limit*(height-top-bottom);
- let svg='<svg viewBox="0 0 '+width+' '+height+'" aria-label="'+esc(yLabel(yKey)+' by '+xLabel)+'" role="group">';
+ let svg='<svg viewBox="0 0 '+width+' '+height+'" aria-label="'+esc(yLabel(yKey,measure)+' by '+xLabel)+'" role="group">';
  for(const tick of yAxis.ticks){
   svg+='<line class="guide" x1="'+left+'" x2="'+(width-right)+'" y1="'+py(tick)+'" y2="'+py(tick)+'"/><text x="'+(left-8)+'" y="'+(py(tick)+4)+'" text-anchor="end">'+formatScore(tick)+'</text>';
  }
@@ -371,17 +367,14 @@ function renderChart(){
    svg+='<circle class="chart-dot" tabindex="0" role="img" aria-label="'+esc(detail)+'" data-detail="'+esc(detail)+'" cx="'+px(p.x)+'" cy="'+py(p.y)+'" r="4" fill="'+colors[i]+'"><title>'+esc(detail)+'</title></circle>';
   }
  });
- const own=coordinates(base,xKey,yKey,basis);
+ const own=coordinates(base,xKey,yKey,basis,measure);
  if(own)svg+='<circle class="own-point" cx="'+px(own.x)+'" cy="'+py(own.y)+'" r="8" fill="none"/>';
  $('plot').innerHTML=points.length?svg+'</svg>':'<p>No configurations have a recorded price for this selection.</p>';
- $('y-title').textContent=yLabel(yKey);
- $('point-info').textContent='Your Mac · '+(own?pointDetail(base,own,yKey):name(base)+' · No recorded '+priceBasis[basis].toLowerCase()+' price');
- if(byTier){
-  const meaning=measure==='value'?'Scores use the full Mac price for the selected condition.':'Multicore and GPU scores are divided by their respective core counts.';
-  $('chart-note').textContent=meaning+' Each family line joins its highest observed value at each available tier. Select a dot for its configuration and performance against your Mac.';
- }else{
-  $('chart-note').textContent=price?'Each family line tracks its best recorded score within budget. Select a dot for its price source and score per $1,000.':hardwareNote;
- }
+ $('y-title').textContent=yLabel(yKey,measure);
+ $('point-info').textContent='Your Mac · '+(own?pointDetail(base,own,yKey,basis,measure):name(base)+' · No recorded '+priceBasis[basis].toLowerCase()+' price');
+ const lineNote=byTier?'Each family line joins its highest observed score at each available tier.':price?'Each family line tracks its best observed score within budget.':hardwareNote;
+ const unitNote=measure==='value'?'Points per $1,000 use the full Mac’s '+priceBasis[basis].toLowerCase()+'. ':measure==='core'?'Scores are divided by the number of '+(yKey==='cl'?'GPU':'CPU')+' cores. ':'';
+ $('chart-note').textContent=unitNote+lineNote;
  if(basis==='current'&&(price||measure==='value'))$('chart-note').textContent+=' Current price uses the lowest recorded new listing, refurbished listing or used sale.';
 }
 $('chart-key').innerHTML=families.map((family,i)=>'<span><svg width="24" height="10" aria-hidden="true"><path d="M0 5H24" stroke="'+colors[i]+'" stroke-width="2" stroke-dasharray="'+patterns[i]+'"/><circle cx="12" cy="5" r="3" fill="'+colors[i]+'"/></svg>'+esc(family)+'</span>').join('');
@@ -395,10 +388,6 @@ function showView(chart){
 }
 $('table-button').addEventListener('click',()=>showView(false));
 $('chart-button').addEventListener('click',()=>showView(true));
-for(const key of ['total','core','value']){
- $('measure-'+key).addEventListener('click',()=>{measure=key;renderChart()});
-}
-$('basis').addEventListener('change',renderChart);
 hardware.addEventListener('change',renderChart);
 benchmark.addEventListener('change',renderChart);
 for(const event of ['pointerover','focusin','click']){
@@ -408,6 +397,6 @@ for(const event of ['pointerover','focusin','click']){
  });
 }
 window.addEventListener('resize',()=>{if(!chartPane.hidden)renderChart()});
-if(window.location?.hash==='#price'){hardware.value='price';showView(true)}
-if(window.location?.hash==='#value'){measure='value';showView(true)}
+if(window.location?.hash==='#price'){hardware.value='current';showView(true)}
+if(window.location?.hash==='#value'){hardware.value='tier';benchmark.value='multi-value';showView(true)}
 </script></body></html>
